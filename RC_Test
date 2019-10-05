@@ -1,0 +1,245 @@
+
+#include<Servo.h>
+Servo myservo;
+
+int X = 6;      //RC - R_L channel 1 -->5   (CH1 --> 5)
+int Y = 5;     //RC - F_B channel 2 --> 6  (CH2 --> 6)
+int Z = 7;    //RC - Motor Arm  channel 3 (CH4 --> 7)
+int W = 4;   //Servo --> channel 6   (CH6 --> 4)
+int w, v, x, y, z, val, a;
+
+int serval = 0;
+int sertol = 2;
+
+int tol = 30;
+int tol1 = 20;
+
+int xmax = 1740;
+int xcent = 1414;  
+int xmin = 1050;
+
+int ymin = 1033;
+int ycent = 1394;
+int ymax = 1750;
+
+int zcent = 1399;
+int zmin = 1020;
+int zmax = 1770;
+
+int wcent = 1445;
+int wmax = 1724;
+int wmin = 1113;
+
+int dir1 = 30; // 1
+int dir2  =40;  //2
+int dir3 = 34; //3
+int dir4 = 36; //4
+
+int dir5 = 42; //Motor - Arm
+
+int pwm1 = 8;  // 1
+int pwm2 = 9;  // 2
+int pwm3 = 10; //3
+int pwm4 = 11; //4
+
+int pwm5 = 12;  // Motor - Arm
+
+void setup() {
+  myservo.attach(W);
+  // put your setup code here, to run once:
+  pinMode(W, INPUT);
+  pinMode(X, INPUT);
+  pinMode(Y, INPUT);
+  pinMode(Z, INPUT);
+  
+  pinMode(dir1, OUTPUT);
+  pinMode(dir2, OUTPUT);
+  pinMode(dir3,OUTPUT);
+  pinMode(dir4,OUTPUT);
+  
+  pinMode(dir5,OUTPUT);
+  
+  pinMode(pwm1, OUTPUT);
+  pinMode(pwm2, OUTPUT);
+  pinMode(pwm3, OUTPUT);
+  pinMode(pwm4, OUTPUT);
+  
+  pinMode(pwm5, OUTPUT);
+   
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  // put your main code here, to run repeatedly:
+  x = pulseIn(X, HIGH);                                           //R_L
+  ///Serial.print(x);
+  delay(10);
+  
+  Serial.print("        ");
+  y = pulseIn(Y, HIGH);                                          //F_B
+//Serial.println(y);
+  delay(10);
+
+ // Serial.print("        ");
+  z = pulseIn(Z,HIGH);                                           //Motor - ARM
+ // Serial.println(z);
+  delay(10);
+
+ // Serial.print("        ");
+  v = pulseIn(V,HIGH);                                            //Servo
+  delay(10);
+ Serial.println(v);
+
+  if(z < (zcent - tol1) && (z > zmin))                   //Motor - Close
+{
+  analogWrite(pwm5,170);
+  digitalWrite(dir5,LOW);
+  //Serial.println("Arm - Close");
+}
+
+else if(z > (zcent + tol1) && (z < zmax))                // Motor - Open
+{
+  analogWrite(pwm5,170);
+  digitalWrite(dir5,HIGH);
+  //Serial.println("Arm - Open");
+}
+
+else if(z < (zcent + tol1) && z > (zcent - tol1))          // Motor - No Action
+{
+  analogWrite(pwm5,0);
+ // Serial.println("No Action");
+}
+
+if (v < 1200 )                        //Servo UP
+{
+  serval = serval + sertol;
+  if(serval >= 140)
+  {
+    myservo.write(140);
+    serval = 140;
+  }
+  else
+  {
+  myservo.write(serval);
+  delay(15);
+  }
+  Serial.println("Servo Up");
+ Serial.println(serval);
+}
+else if(v > 1750)                                  //Servo DOWN
+{
+  serval = serval - sertol;
+  if(serval <= 6)
+  {
+    myservo.write(6);
+    delay(15);
+    serval = 6;
+  }
+  else
+  {
+  myservo.write(serval);
+  }
+ Serial.println("Servo Down");
+Serial.println(serval);
+  //
+}
+
+else if((v > 1202) && (v < 1749) )                  // Servo - default
+{
+  myservo.write(serval);
+ Serial.println("Servo - Rest");
+  Serial.println(serval);
+}
+
+  if ( (x > (xcent - tol) && x < (xcent + tol)) && (y > (ycent - tol) && y < (ycent + tol)) )          //REST
+  {
+    analogWrite(pwm1, 0);
+    analogWrite(pwm2, 0);
+    analogWrite(pwm3, 0);
+    analogWrite(pwm4, 0);
+    
+   // Serial.println("Rest");
+  }
+  else if (x < xmin && y < ymin)                                                                       //REST
+  {
+    analogWrite(pwm1, 0);
+    analogWrite(pwm2, 0);
+    analogWrite(pwm3, 0);
+    analogWrite(pwm4, 0);
+  //  Serial.println("Rest");
+
+  }
+
+  if ((x > (xcent + tol) && (x < xmax)) && (y > (ycent - tol) && y < (ycent + tol)))                 //Forward
+  {
+    val = map(x, (xcent + tol), xmax, 0, 150);
+    analogWrite(pwm1, val);
+    analogWrite(pwm2, val);
+    analogWrite(pwm3, val);
+    analogWrite(pwm4, val);
+ 
+    digitalWrite(dir1,HIGH);
+    digitalWrite(dir2,HIGH);
+    digitalWrite(dir3,HIGH);
+    digitalWrite(dir4,HIGH);
+ //   Serial.println("Forward");
+
+  }
+  else if ((x < (xcent - tol) && (x > xmin)) && (y > (ycent - tol) && y < (ycent + tol)))            //Back
+  {
+    val = map(x, (xcent - tol), xmin, 0, 150);
+    analogWrite(pwm1, val);
+    analogWrite(pwm2, val);
+    analogWrite(pwm3, val);
+    analogWrite(pwm4, val);
+
+    digitalWrite(dir1,LOW);
+    digitalWrite(dir2,LOW);
+    digitalWrite(dir3,LOW);
+    digitalWrite(dir4,LOW);
+    
+    //Serial.println("Backward");
+  }
+
+  else if ((x > (xcent - tol) && (x < (xcent + tol))) && (y > (ycent + tol) && y < ymax))        //Diffrential Right
+  {
+    val = map(y, (ycent + tol), ymax, 0, 150);
+   
+   
+    analogWrite(pwm1, val);
+    analogWrite(pwm2, val);
+    analogWrite(pwm3, val);
+    analogWrite(pwm4, val);
+   
+    digitalWrite(dir1,HIGH);
+    digitalWrite(dir2,LOW);
+    digitalWrite(dir3,HIGH);
+    digitalWrite(dir4,LOW);
+   
+ //   Serial.println("Differential Right");
+
+  }
+  else if ((x > (xcent - tol) && (x < (xcent + tol))) && (y < (ycent - tol) && y > ymin))        // Differential Left
+  {
+
+    val = map(y, (ycent - tol), ymin, 0, 150);
+   
+    analogWrite(pwm1, val);
+    analogWrite(pwm2, val);
+    analogWrite(pwm3, val);
+    analogWrite(pwm4, val);
+   
+    digitalWrite(dir1,LOW);
+    digitalWrite(dir2,HIGH);
+    digitalWrite(dir3,LOW);
+    digitalWrite(dir4,HIGH);
+    //Serial.println("Differential Left");
+
+  }
+}
+
+ 
+  
+  
+  
